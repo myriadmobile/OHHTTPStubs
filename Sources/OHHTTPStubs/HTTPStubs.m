@@ -418,8 +418,6 @@ static NSTimeInterval const kSlotTime = 0.25; // Must be >0. We will send a chun
         HTTPStubs.sharedInstance.onStubActivationBlock(request, self.stub, responseStub);
     }
 
-    if (responseStub.error == nil)
-    {
         NSHTTPURLResponse* urlResponse = [[NSHTTPURLResponse alloc] initWithURL:request.URL
                                                                      statusCode:responseStub.statusCode
                                                                     HTTPVersion:@"HTTP/1.1"
@@ -493,36 +491,21 @@ static NSTimeInterval const kSlotTime = 0.25; // Must be >0. We will send a chun
                                completion:^(NSError * error)
                  {
                      [responseStub.inputStream close];
-                     NSError *blockError = nil;
                      if (error==nil)
                      {
                          [client URLProtocolDidFinishLoading:self];
                      }
                      else
                      {
-                         [client URLProtocol:self didFailWithError:responseStub.error];
-                         blockError = responseStub.error;
+                         [client URLProtocol:self didFailWithError:error];
                      }
                      if (HTTPStubs.sharedInstance.afterStubFinishBlock)
                      {
-                         HTTPStubs.sharedInstance.afterStubFinishBlock(request, self.stub, responseStub, blockError);
+                         HTTPStubs.sharedInstance.afterStubFinishBlock(request, self.stub, responseStub, responseStub.error);
                      }
                  }];
             }
         }];
-    } else {
-        // Send the canned error
-        [self executeOnClientRunLoopAfterDelay:responseStub.responseTime block:^{
-            if (!self.stopped)
-            {
-                [client URLProtocol:self didFailWithError:responseStub.error];
-                if (HTTPStubs.sharedInstance.afterStubFinishBlock)
-                {
-                    HTTPStubs.sharedInstance.afterStubFinishBlock(request, self.stub, responseStub, responseStub.error);
-                }
-            }
-        }];
-    }
 }
 
 - (void)stopLoading
