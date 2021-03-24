@@ -491,13 +491,19 @@ static NSTimeInterval const kSlotTime = 0.25; // Must be >0. We will send a chun
                            completion:^(NSError * error)
              {
                 [responseStub.inputStream close];
-                if (error==nil)
+                NSError *blockError = error;
+                if (blockError == nil)
+                {
+                    blockError = responseStub.error;
+                }
+                
+                if (blockError==nil)
                 {
                     [client URLProtocolDidFinishLoading:self];
                 }
                 else
                 {
-                    [client URLProtocol:self didFailWithError:error];
+                    [client URLProtocol:self didFailWithError:blockError];
                 }
                 if (HTTPStubs.sharedInstance.afterStubFinishBlock)
                 {
