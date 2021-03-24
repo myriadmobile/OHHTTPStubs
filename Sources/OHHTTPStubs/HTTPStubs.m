@@ -500,14 +500,21 @@ static NSTimeInterval const kSlotTime = 0.25; // Must be >0. We will send a chun
                 if (blockError==nil)
                 {
                     [client URLProtocolDidFinishLoading:self];
+                    if (HTTPStubs.sharedInstance.afterStubFinishBlock)
+                    {
+                        HTTPStubs.sharedInstance.afterStubFinishBlock(request, self.stub, responseStub, responseStub.error);
+                    }
                 }
                 else
                 {
-                    [client URLProtocol:self didFailWithError:blockError];
-                }
-                if (HTTPStubs.sharedInstance.afterStubFinishBlock)
-                {
-                    HTTPStubs.sharedInstance.afterStubFinishBlock(request, self.stub, responseStub, responseStub.error);
+                    // HACK: There's a strange race condition happening
+                    [self executeOnClientRunLoopAfterDelay:0.01 block:^{
+                        [client URLProtocol:self didFailWithError:blockError];
+                        if (HTTPStubs.sharedInstance.afterStubFinishBlock)
+                        {
+                            HTTPStubs.sharedInstance.afterStubFinishBlock(request, self.stub, responseStub, responseStub.error);
+                        }
+                    }];
                 }
             }];
         }
