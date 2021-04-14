@@ -343,6 +343,10 @@ static NSTimeInterval const kSlotTime = 0.25; // Must be >0. We will send a chun
 
 + (BOOL)canInitWithRequest:(NSURLRequest *)request
 {
+    if (!HTTPStubs.sharedInstance.isEnabled) {
+        return false;
+    }
+    
     BOOL found = ([HTTPStubs.sharedInstance firstStubPassingTestForRequest:request] != nil);
     if (!found && HTTPStubs.sharedInstance.onStubMissingBlock) {
         HTTPStubs.sharedInstance.onStubMissingBlock(request);
