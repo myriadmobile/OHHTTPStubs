@@ -1,7 +1,7 @@
 Pod::Spec.new do |s|
 
-  s.name         = "OHHTTPStubs"
-  s.version      = "9.2.1"
+  s.name         = "OHHTTPStubs_Bushel"
+  s.version      = "9.2.2"
 
   s.summary      = "Framework to stub your network requests like HTTP and help you write network unit tests with XCTest."
   s.description  = <<-DESC.gsub(/^ +\|/,'')
@@ -19,7 +19,7 @@ Pod::Spec.new do |s|
                     | * Compatible with Swift
                  DESC
 
-  s.homepage     = "https://github.com/AliSoftware/OHHTTPStubs"
+  s.homepage     = "https://github.com/myriadmobile/OHHTTPStubs"
   s.license      = "MIT"
   s.authors      = { 'Olivier Halligon' => 'olivier.halligon+ae@gmail.com' }
 
