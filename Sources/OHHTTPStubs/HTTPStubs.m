@@ -422,111 +422,107 @@ static NSTimeInterval const kSlotTime = 0.25; // Must be >0. We will send a chun
         HTTPStubs.sharedInstance.onStubActivationBlock(request, self.stub, responseStub);
     }
 
-    if (responseStub.error == nil)
+    NSHTTPURLResponse* urlResponse = [[NSHTTPURLResponse alloc] initWithURL:request.URL
+                                                                 statusCode:responseStub.statusCode
+                                                                HTTPVersion:@"HTTP/1.1"
+                                                               headerFields:responseStub.httpHeaders];
+    
+    // Cookies handling
+    if (request.HTTPShouldHandleCookies && request.URL)
     {
-        NSHTTPURLResponse* urlResponse = [[NSHTTPURLResponse alloc] initWithURL:request.URL
-                                                                     statusCode:responseStub.statusCode
-                                                                    HTTPVersion:@"HTTP/1.1"
-                                                                   headerFields:responseStub.httpHeaders];
-
-        // Cookies handling
-        if (request.HTTPShouldHandleCookies && request.URL)
+        NSArray* cookies = [NSHTTPCookie cookiesWithResponseHeaderFields:responseStub.httpHeaders forURL:request.URL];
+        if (cookies)
         {
-            NSArray* cookies = [NSHTTPCookie cookiesWithResponseHeaderFields:responseStub.httpHeaders forURL:request.URL];
-            if (cookies)
-            {
-                [NSHTTPCookieStorage.sharedHTTPCookieStorage setCookies:cookies forURL:request.URL mainDocumentURL:request.mainDocumentURL];
-            }
+            [NSHTTPCookieStorage.sharedHTTPCookieStorage setCookies:cookies forURL:request.URL mainDocumentURL:request.mainDocumentURL];
         }
-
-
-        NSString* redirectLocation = (responseStub.httpHeaders)[@"Location"];
-        NSURL* redirectLocationURL;
-        if (redirectLocation)
-        {
-            redirectLocationURL = [NSURL URLWithString:redirectLocation];
-        }
-        else
-        {
-            redirectLocationURL = nil;
-        }
-        [self executeOnClientRunLoopAfterDelay:responseStub.requestTime block:^{
-            if (!self.stopped)
-            {
-                // Notify if a redirection occurred
-                if (((responseStub.statusCode > 300) && (responseStub.statusCode < 400)) && redirectLocationURL)
-                {
-                    NSURLRequest *redirectRequest;
-                    NSMutableURLRequest *mReq;
-
-                    switch (responseStub.statusCode)
-                    {
-                        case 301:
-                        case 302:
-                        case 307:
-                        case 308: {
-                            //Preserve the original request method and body, and set the new location URL
-                            mReq = [self.request mutableCopy];
-                            [mReq setURL:redirectLocationURL];
-                            
-                            mReq = [self clearAuthHeadersForRequest:mReq];
-                            
-                            redirectRequest = (NSURLRequest*)[mReq copy];
-                            break;
-                        }
-                        default:
-                            redirectRequest = [NSURLRequest requestWithURL:redirectLocationURL];
-                            break;
-                    }
-
-                    [client URLProtocol:self wasRedirectedToRequest:redirectRequest redirectResponse:urlResponse];
-                    if (HTTPStubs.sharedInstance.onStubRedirectBlock)
-                    {
-                        HTTPStubs.sharedInstance.onStubRedirectBlock(request, redirectRequest, self.stub, responseStub);
-                    }
-                }
-
-                // Send the response (even for redirections)
-                [client URLProtocol:self didReceiveResponse:urlResponse cacheStoragePolicy:NSURLCacheStorageNotAllowed];
-                if(responseStub.inputStream.streamStatus == NSStreamStatusNotOpen)
-                {
-                    [responseStub.inputStream open];
-                }
-                [self streamDataForClient:client
-                         withStubResponse:responseStub
-                               completion:^(NSError * error)
-                 {
-                     [responseStub.inputStream close];
-                     NSError *blockError = nil;
-                     if (error==nil)
-                     {
-                         [client URLProtocolDidFinishLoading:self];
-                     }
-                     else
-                     {
-                         [client URLProtocol:self didFailWithError:responseStub.error];
-                         blockError = responseStub.error;
-                     }
-                     if (HTTPStubs.sharedInstance.afterStubFinishBlock)
-                     {
-                         HTTPStubs.sharedInstance.afterStubFinishBlock(request, self.stub, responseStub, blockError);
-                     }
-                 }];
-            }
-        }];
-    } else {
-        // Send the canned error
-        [self executeOnClientRunLoopAfterDelay:responseStub.responseTime block:^{
-            if (!self.stopped)
-            {
-                [client URLProtocol:self didFailWithError:responseStub.error];
-                if (HTTPStubs.sharedInstance.afterStubFinishBlock)
-                {
-                    HTTPStubs.sharedInstance.afterStubFinishBlock(request, self.stub, responseStub, responseStub.error);
-                }
-            }
-        }];
     }
+    
+    
+    NSString* redirectLocation = (responseStub.httpHeaders)[@"Location"];
+    NSURL* redirectLocationURL;
+    if (redirectLocation)
+    {
+        redirectLocationURL = [NSURL URLWithString:redirectLocation];
+    }
+    else
+    {
+        redirectLocationURL = nil;
+    }
+    [self executeOnClientRunLoopAfterDelay:responseStub.requestTime block:^{
+        if (!self.stopped)
+        {
+            // Notify if a redirection occurred
+            if (((responseStub.statusCode > 300) && (responseStub.statusCode < 400)) && redirectLocationURL)
+            {
+                NSURLRequest *redirectRequest;
+                NSMutableURLRequest *mReq;
+                
+                switch (responseStub.statusCode)
+                {
+                    case 301:
+                    case 302:
+                    case 307:
+                    case 308: {
+                        //Preserve the original request method and body, and set the new location URL
+                        mReq = [self.request mutableCopy];
+                        [mReq setURL:redirectLocationURL];
+                        
+                        mReq = [self clearAuthHeadersForRequest:mReq];
+                        
+                        redirectRequest = (NSURLRequest*)[mReq copy];
+                        break;
+                    }
+                    default:
+                        redirectRequest = [NSURLRequest requestWithURL:redirectLocationURL];
+                        break;
+                }
+                
+                [client URLProtocol:self wasRedirectedToRequest:redirectRequest redirectResponse:urlResponse];
+                if (HTTPStubs.sharedInstance.onStubRedirectBlock)
+                {
+                    HTTPStubs.sharedInstance.onStubRedirectBlock(request, redirectRequest, self.stub, responseStub);
+                }
+            }
+            
+            // Send the response (even for redirections)
+            [client URLProtocol:self didReceiveResponse:urlResponse cacheStoragePolicy:NSURLCacheStorageNotAllowed];
+            if(responseStub.inputStream.streamStatus == NSStreamStatusNotOpen)
+            {
+                [responseStub.inputStream open];
+            }
+            [self streamDataForClient:client
+                     withStubResponse:responseStub
+                           completion:^(NSError * error)
+             {
+                [responseStub.inputStream close];
+                NSError *blockError = error;
+                if (blockError == nil)
+                {
+                    blockError = responseStub.error;
+                }
+                
+                if (blockError==nil)
+                {
+                    [client URLProtocolDidFinishLoading:self];
+                    if (HTTPStubs.sharedInstance.afterStubFinishBlock)
+                    {
+                        HTTPStubs.sharedInstance.afterStubFinishBlock(request, self.stub, responseStub, responseStub.error);
+                    }
+                }
+                else
+                {
+                    // HACK: There's a strange race condition happening
+                    [self executeOnClientRunLoopAfterDelay:0.01 block:^{
+                        [client URLProtocol:self didFailWithError:blockError];
+                        if (HTTPStubs.sharedInstance.afterStubFinishBlock)
+                        {
+                            HTTPStubs.sharedInstance.afterStubFinishBlock(request, self.stub, responseStub, responseStub.error);
+                        }
+                    }];
+                }
+            }];
+        }
+    }];
 }
 
 - (void)stopLoading
