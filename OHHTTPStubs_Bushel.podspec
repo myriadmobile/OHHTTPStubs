@@ -37,10 +37,10 @@ Pod::Spec.new do |s|
   s.default_subspec = 'Default'
   # Default subspec that includes the most commonly-used components
   s.subspec 'Default' do |default|
-    default.dependency 'OHHTTPStubs/Core'
-    default.dependency 'OHHTTPStubs/NSURLSession'
-    default.dependency 'OHHTTPStubs/JSON'
-    default.dependency 'OHHTTPStubs/OHPathHelpers'
+    default.dependency 'OHHTTPStubs_Bushel/Core'
+    default.dependency 'OHHTTPStubs_Bushel/NSURLSession'
+    default.dependency 'OHHTTPStubs_Bushel/JSON'
+    default.dependency 'OHHTTPStubs_Bushel/OHPathHelpers'
   end
 
   # The Core subspec, containing the library core needed in all cases
@@ -51,23 +51,23 @@ Pod::Spec.new do |s|
 
   # Optional subspecs
   s.subspec 'NSURLSession' do |urlsession|
-    urlsession.dependency 'OHHTTPStubs/Core'
+    urlsession.dependency 'OHHTTPStubs_Bushel/Core'
     urlsession.source_files = "Sources/OHHTTPStubs/**/NSURLRequest+HTTPBodyTesting.{h,m}", "Sources/OHHTTPStubs/**/HTTPStubs+NSURLSessionConfiguration.{h,m}", "Sources/OHHTTPStubs/**/HTTPStubsMethodSwizzling.{h,m}"
     urlsession.private_header_files = "Sources/OHHTTPStubs/**/HTTPStubsMethodSwizzling.h"
   end
 
   s.subspec 'JSON' do |json|
-    json.dependency 'OHHTTPStubs/Core'
+    json.dependency 'OHHTTPStubs_Bushel/Core'
     json.source_files = "Sources/OHHTTPStubs/**/HTTPStubsResponse+JSON.{h,m}"
   end
 
   s.subspec 'HTTPMessage' do |httpmessage|
-    httpmessage.dependency 'OHHTTPStubs/Core'
+    httpmessage.dependency 'OHHTTPStubs_Bushel/Core'
     httpmessage.source_files = "Sources/HTTPMessage/**/*.{h,m}"
   end
 
   s.subspec 'Mocktail' do |mocktail|
-    mocktail.dependency 'OHHTTPStubs/Core'
+    mocktail.dependency 'OHHTTPStubs_Bushel/Core'
     mocktail.source_files = "Sources/Mocktail/**/*.{h,m}"
   end
 
@@ -81,7 +81,7 @@ Pod::Spec.new do |s|
     swift.watchos.deployment_target = '2.0'
     swift.tvos.deployment_target = '9.0'
 
-    swift.dependency 'OHHTTPStubs/Default'
+    swift.dependency 'OHHTTPStubs_Bushel/Default'
     swift.source_files = "Sources/OHHTTPStubsSwift/*.swift"
   end
 
